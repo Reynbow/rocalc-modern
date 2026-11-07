@@ -7,7 +7,8 @@
     "import": "node tools/import-snapshot.mjs",
     "build": "node tools/build.mjs",
     "test": "node tools/smoke.mjs",
-    "sync": "node tools/import-snapshot.mjs && node tools/build.mjs && node tools/smoke.mjs",
+    "sync": "node tools/import-snapshot.mjs && node tools/build.mjs && node tools/smoke.mjs && node tools/build.mjs --site ../RO_PreRenewal/1_Database/www/calc",
+    "site": "node tools/build.mjs --site ../RO_PreRenewal/1_Database/www/calc",
     "serve": "node tools/serve.mjs",
     "bookmarklet": "node tools/make-bookmarklet.mjs"
   },

@@ -3,6 +3,13 @@
 A new interface, in the roclassicplus.com style, for Kurimet's pre-renewal calculator,
 [rocalc.com](https://rocalc.com/). It follows rocalc's releases.
 
+It lives on the website at `roclassicplus.com/?module=calculator`. The page there is the
+FluxCP module in `RO_PreRenewal/1_Database/www` (`modules/calculator`,
+`themes/roclassicplus-dark/calculator`); its files are `www/calc/`, written by
+`npm run site`. The game's Stats window has an "Open in calculator" button
+(`5_Legacy/src/UI/CustomTheme/RoCalcExport.js`) that opens it with the character loaded
+through a `#build=` link (format in `app/app.js`, "builds sent from the game").
+
 ## How it works
 
 - `upstream/<release>/` holds rocalc's own files exactly as rocalc.com serves them.
@@ -25,8 +32,9 @@ the VPN in Chrome. So a new release is fetched through Chrome:
 2. With the VPN on, open rocalc.com in Chrome, wait for the calculator, click "Save rocalc".
    It downloads `rocalc-<release>.json` to Downloads.
 3. Run `npm run sync`. It imports the newest snapshot from Downloads into `upstream/`,
-   builds `dist/`, and runs the smoke test.
-4. If every check passes, commit and push. GitHub Actions builds, tests again and deploys.
+   builds `dist/`, runs the smoke test, and only if every check passes copies the
+   calculator into the website's `www/calc/`.
+4. Deploy the website as usual (the `www` job of `deploy-to-vps.ps1`, run on the VPS).
 
 rocalc dates its scripts (`head_2026-04-06.js`), so the release name comes from those.
 Its changelog is on the "Server and options" tab.
@@ -38,7 +46,8 @@ keeps the previous release until it's fixed.
 
 | Command | What it does |
 | --- | --- |
-| `npm run sync` | Import the newest snapshot, build, test |
+| `npm run sync` | Import the newest snapshot, build, test, copy to the website |
+| `npm run site` | Build and copy to the website's `www/calc/` (no import, no test) |
 | `npm run import [file]` | Import a snapshot (default: newest `rocalc-*.json` in Downloads) |
 | `npm run build` | Build `dist/` from `upstream/CURRENT` |
 | `npm test` | Smoke test `dist/` in headless Chrome |

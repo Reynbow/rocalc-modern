@@ -1,0 +1,50 @@
+/* The standalone page around the calculator (dist/index.html), for local use
+   and the smoke test. On the website the site's own header, footer and font
+   take this file's place; the calculator itself is styled by calc.css. */
+
+@font-face { font-family: Galmuri11; font-weight: 400; font-display: swap; src: url("fonts/Galmuri11.woff2") format("woff2"); }
+@font-face { font-family: Galmuri11; font-weight: 700; font-display: swap; src: url("fonts/Galmuri11-Bold.woff2") format("woff2"); }
+
+:root {
+  color-scheme: dark;
+  --bg: #1a1f28;
+  --border: rgba(120, 165, 220, 0.22);
+  --text: #f4f6fa;
+  --muted: #b4bdd0;
+  --accent: #8ec5ff;
+  --accent-hover: #a9d3ff;
+  --font: Galmuri11, "Source Sans 3", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--bg); scrollbar-color: #465169 var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--font); }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:hover { color: var(--accent-hover); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+.topbar { position: sticky; top: 0; z-index: 50; background: rgba(37, 43, 54, 0.78); border-bottom: 1px solid var(--border); backdrop-filter: blur(14px); }
+.topbar-inner { max-width: 1440px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand-mark { width: 30px; height: 30px; border-radius: 6px; background: url(logo.svg) center / 100% 100% no-repeat; }
+.brand-text { color: var(--accent); font-weight: 700; font-size: 20px; white-space: nowrap; }
+.nav { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px 18px; }
+.navlink { position: relative; padding: 6px 0; color: var(--muted); text-decoration: none; white-space: nowrap; }
+.navlink:hover { color: var(--text); }
+.navlink--active { color: var(--text); }
+.navlink--active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -15px; height: 2px; background: var(--accent); }
+
+.page { max-width: 1440px; margin: 0 auto; padding: 0 20px 40px; }
+.pagehead { margin: 22px 0 16px; }
+.pagehead h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.3px; }
+.pagehead p { margin: 0; color: var(--muted); }
+.footer { max-width: 1440px; margin: 0 auto; padding: 18px 20px 30px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+.footer p { margin: 0 0 6px; }
+
+@media (max-width: 900px) {
+  .topbar { position: static; }
+  .topbar-inner { flex-wrap: wrap; }
+  .nav { justify-content: flex-start; }
+  .navlink--active::after { bottom: 0; }
+  .page { padding: 0 16px 30px; }
+}

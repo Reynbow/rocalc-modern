@@ -1,11 +1,11 @@
-/* RO Classic + calculator. Tokens and rules follow the roclassicplus.com
-   theme (roclassicplus-dark.css): slate ground, Galmuri11, RO-blue accent,
-   bordered panels at 12px with 6px inside, flat buttons. Dark only. */
+/* RO Classic + calculator. Lives in a shadow root (see app.js), so these
+   rules reach only the calculator and the page around it can not restyle it.
+   Tokens and rules follow the roclassicplus.com theme (roclassicplus-dark.css):
+   slate ground, Galmuri11, RO-blue accent, bordered panels at 12px with 6px
+   inside, flat buttons. Dark only. The font itself is loaded by the page. */
 
-@font-face { font-family: Galmuri11; font-weight: 400; font-display: swap; src: url("fonts/Galmuri11.woff2") format("woff2"); }
-@font-face { font-family: Galmuri11; font-weight: 700; font-display: swap; src: url("fonts/Galmuri11-Bold.woff2") format("woff2"); }
-
-:root {
+:host {
+  display: block;
   color-scheme: dark;
   --bg: #1a1f28;
   --bg-raised: #252b36;
@@ -29,59 +29,24 @@
   --success: #7fd6a4;
   --gold: #e8b84b;
   --font: Galmuri11, "Source Sans 3", system-ui, sans-serif;
+  color: var(--text);
+  font: 14px/1.5 var(--font);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
 }
 
 * { box-sizing: border-box; }
-html { background: var(--bg); scrollbar-color: #465169 var(--bg); }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 14px/1.5 var(--font);
-  caret-color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
 ::selection { background: rgba(142, 197, 255, 0.34); color: #fff; }
 a { color: var(--accent); text-underline-offset: 3px; }
 a:hover { color: var(--accent-hover); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 [hidden] { display: none !important; }
-button, input, select, textarea { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; letter-spacing: normal; }
+p { margin: 0 0 8px; }
+h2 { font-family: inherit; line-height: 1.3; }
 
-/* ---------- Top bar ---------- */
+/* ---------- Layout ---------- */
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(37, 43, 54, 0.78);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(14px);
-}
-.topbar-inner {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
-.brand-mark { width: 30px; height: 30px; border-radius: 6px; background: url(logo.svg) center / 100% 100% no-repeat; }
-.brand-text { color: var(--accent); font-weight: 700; font-size: 20px; white-space: nowrap; }
-.nav { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px 18px; }
-.navlink { position: relative; padding: 6px 0; color: var(--muted); text-decoration: none; white-space: nowrap; }
-.navlink:hover { color: var(--text); }
-.navlink--active { color: var(--text); }
-.navlink--active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -15px; height: 2px; background: var(--accent); }
-
-/* ---------- Page ---------- */
-
-.page { max-width: 1440px; margin: 0 auto; padding: 0 20px 40px; }
-.pagehead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 22px 0 16px; }
-.pagehead h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.3px; }
-.pagehead p { margin: 0; color: var(--muted); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 18px; align-items: start; }
 .results { position: sticky; top: 76px; max-height: calc(100vh - 92px); overflow: auto; scrollbar-width: thin; display: grid; gap: 14px; }
@@ -228,7 +193,7 @@ select.searchable { background-image: url("data:image/svg+xml,%3Csvg xmlns='http
 /* ---------- Search list ---------- */
 
 .pop {
-  position: absolute; z-index: 70;
+  position: fixed; z-index: 70;
   background: var(--panel-solid);
   border: 1px solid var(--border-strong);
   border-radius: 6px;
@@ -256,12 +221,15 @@ select.searchable { background-image: url("data:image/svg+xml,%3Csvg xmlns='http
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 
-/* ---------- Loading, footer, phone ---------- */
+.notice { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin: 0 0 14px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-wash); }
+.notice p { margin: 0 0 4px; }
+.notice p:last-child { margin-bottom: 0; }
+.notice .quiet { color: var(--muted); font-size: 13px; }
+
+/* ---------- Loading, phone ---------- */
 
 .loading { padding: 40px 0; color: var(--muted); }
 .loading.is-error { color: var(--danger); }
-.footer { max-width: 1440px; margin: 0 auto; padding: 18px 20px 30px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
-.footer p { margin: 0 0 6px; }
 
 .summary { display: none; }
 
@@ -271,21 +239,13 @@ select.searchable { background-image: url("data:image/svg+xml,%3Csvg xmlns='http
   .summary {
     display: flex; justify-content: space-between; gap: 12px;
     position: sticky; bottom: 0; z-index: 40;
-    margin: 0 -20px; padding: 10px 20px;
+    padding: 10px 16px; border-radius: 6px 6px 0 0;
     background: rgba(37, 43, 54, 0.92); border-top: 1px solid var(--border); backdrop-filter: blur(14px);
   }
   .summary b { color: var(--accent); }
   .equip { grid-template-columns: 96px 64px minmax(0, 1fr); }
   .equip .head:nth-child(n+4) { display: none; }
   .equip .wide { grid-column: 2 / -1; }
-}
-@media (max-width: 900px) {
-  .topbar { position: static; }
-  .topbar-inner { flex-wrap: wrap; }
-  .nav { justify-content: flex-start; }
-  .navlink--active::after { bottom: 0; }
-  .page { padding: 0 16px 30px; }
-  .summary { margin: 0 -16px; padding: 10px 16px; }
 }
 @media (max-width: 520px) {
   .fields { grid-template-columns: 1fr; gap: 4px; }

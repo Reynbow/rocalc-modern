@@ -38,3 +38,26 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(`Built dist/ from rocalc ${version}`);
+
+// ---- the website copy ----
+//   node tools/build.mjs --site <folder>
+// writes the files the website's calculator page loads into <folder> (the
+// site's www/calc). The page itself, its header and font are the website's.
+const siteArg = process.argv.indexOf('--site');
+if (siteArg !== -1) {
+  const site = path.resolve(process.argv[siteArg + 1] || '');
+  const marker = path.join(site, '.rocalc-build');
+  if (fs.existsSync(site) && fs.readdirSync(site).length && !fs.existsSync(marker)) {
+    console.error(`${site} has files this build didn't make; not touching it.`);
+    process.exit(1);
+  }
+  const standaloneOnly = new Set(['index.html', 'page.css', 'fonts', 'logo.svg']);
+  fs.rmSync(site, { recursive: true, force: true });
+  fs.mkdirSync(site, { recursive: true });
+  for (const f of fs.readdirSync(dist)) {
+    if (!standaloneOnly.has(f)) fs.cpSync(path.join(dist, f), path.join(site, f), { recursive: true });
+  }
+  fs.writeFileSync(marker, `rocalc ${version}, built ${new Date().toISOString()} by rocalc-modern/tools/build.mjs\n`);
+  fs.writeFileSync(path.join(site, 'RELEASE'), version + '\n');
+  console.log(`Copied the calculator into ${site}`);
+}

@@ -10,8 +10,24 @@
 (function () {
   'use strict';
 
-  var app = document.getElementById('app');
-  var frame = document.getElementById('engine');
+  // Everything we draw lives in a shadow root on #app, so the page around it
+  // (the roclassicplus.com theme, Bootstrap) can't restyle it and it can't
+  // restyle the page. Files are found next to this script, so the same code
+  // runs from /calc/ on the website and from dist/ on its own.
+  var host = document.getElementById('app');
+  var BASE = new URL('.', (document.currentScript && document.currentScript.src) || location.href).href;
+  var RELEASE = host.getAttribute('data-release') || '';
+  var shadow = host.attachShadow({ mode: 'open' });
+  shadow.innerHTML = '<link rel="stylesheet" href="' + BASE + 'calc.css?v=' + encodeURIComponent(RELEASE) + '">' +
+    '<div class="root"><p class="loading" id="loading">Loading the calculator...</p></div>';
+  var app = shadow.querySelector('.root');
+
+  // rocalc itself, out of sight. It does every calculation.
+  var frame = document.createElement('iframe');
+  frame.title = 'rocalc engine';
+  frame.tabIndex = -1;
+  frame.setAttribute('aria-hidden', 'true');
+  frame.style.cssText = 'position:absolute; left:-12000px; top:0; width:1400px; height:900px; border:0; visibility:hidden;';
   var EW, ED, form;
 
   // ---------------------------------------------------------------- utils
@@ -60,8 +76,12 @@
     for (var i = 0; i < hs.length; i++) if (re.test(hs[i].textContent)) return hs[i].nextElementSibling;
     return null;
   }
-  // rocalc builds share links from its own address; ours is the page people should get.
-  function ourUrl(v) { return String(v || '').replace(/engine\.html/g, ''); }
+  // rocalc builds share links from its own (engine) address; people should
+  // get this page with the same #fragment.
+  function ourUrl(v) {
+    var s = String(v || ''), i = s.indexOf('#');
+    return i < 0 ? s : location.href.split('#')[0] + s.slice(i);
+  }
 
   // Inline colours carry meaning in rocalc (over weight in red and so on).
   var colourCache = {};
@@ -186,7 +206,7 @@
       var tip = e.querySelector && e.querySelector('.nametext');
       if (tip) n.title = clean(tip.textContent);
     } else {
-      if (document.activeElement !== n) n.value = e.name === 'URL_TEXT' ? ourUrl(e.value) : e.value;
+      if (shadow.activeElement !== n) n.value = e.name === 'URL_TEXT' ? ourUrl(e.value) : e.value;
       n.placeholder = e.placeholder || '';
       n.disabled = e.disabled;
       n.readOnly = e.readOnly;
@@ -212,8 +232,8 @@
   // They are written in English, then Spanish; we show the English part.
   var toastTimer = null;
   function toast(msg) {
-    var box = document.getElementById('toast');
-    if (!box) { box = h('div', { id: 'toast', className: 'toast', role: 'status' }); document.body.appendChild(box); }
+    var box = shadow.getElementById('toast');
+    if (!box) { box = h('div', { id: 'toast', className: 'toast', role: 'status' }); shadow.appendChild(box); }
     box.textContent = String(msg).split(/\n\s*\n/)[0].trim();
     box.hidden = false;
     clearTimeout(toastTimer);
@@ -386,7 +406,7 @@
   }
 
   function buildProjection(p, lines) {
-    var keepFocus = document.activeElement;
+    var keepFocus = shadow.activeElement;
     p.node.textContent = '';
     p.texts = [];
     // Rows of one rocalc table with the same number of cells share a grid,
@@ -420,7 +440,7 @@
           n = h('span', { className: 'gap' });
         }
         else if (t.k === 'a') {
-          n = h('a', { href: /^https?:/i.test(t.href) ? t.href : ourUrl(new URL(t.href, ED.baseURI).href), target: '_blank', rel: 'noopener' });
+          n = h('a', { href: new URL(t.href, ED.baseURI).href, target: '_blank', rel: 'noopener' });
           p.texts.push(n);
         } else if (t.k === 'act') {
           (function (el) {
@@ -444,7 +464,7 @@
       if (!useGrid) p.node.appendChild(row);
     });
     patchProjection(p, lines);
-    if (keepFocus && keepFocus !== document.activeElement && document.contains(keepFocus)) keepFocus.focus();
+    if (keepFocus && keepFocus !== shadow.activeElement && shadow.contains(keepFocus)) keepFocus.focus();
   }
 
   function patchProjection(p, lines) {
@@ -514,14 +534,14 @@
     return m.wordy;
   }
   var pop = null;
-  document.addEventListener('mousedown', function (e) {
+  shadow.addEventListener('mousedown', function (e) {
     var s = e.target.closest && e.target.closest('select.searchable');
     if (!s || e.button !== 0) return;
     e.preventDefault();
     s.focus();
     if (pop && pop.select === s) closePop(); else openPop(s, '');
   }, true);
-  document.addEventListener('keydown', function (e) {
+  shadow.addEventListener('keydown', function (e) {
     var s = e.target;
     if (pop || !s.classList || !s.classList.contains('searchable') || e.ctrlKey || e.metaKey) return;
     if (e.key === 'Enter' || e.key === ' ' || (e.altKey && e.key === 'ArrowDown')) { e.preventDefault(); openPop(s, ''); }
@@ -536,14 +556,16 @@
     var count = h('div', { className: 'count' });
     var list = h('div', { className: 'list', role: 'listbox' });
     var box = h('div', { className: 'pop' }, [input, count, list]);
-    document.body.appendChild(box);
+    shadow.appendChild(box);
+    // Fixed to the viewport; it closes when the page scrolls.
     var r = select.getBoundingClientRect();
-    var width = Math.min(Math.max(r.width, 300), document.documentElement.clientWidth - 16);
+    var vw = document.documentElement.clientWidth;
+    var width = Math.min(Math.max(r.width, 300), vw - 16);
     box.style.width = width + 'px';
-    box.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - width - 8)) + window.scrollX + 'px';
+    box.style.left = Math.max(8, Math.min(r.left, vw - width - 8)) + 'px';
     var below = window.innerHeight - r.bottom;
-    if (below < 280 && r.top > below) { box.style.top = (r.top + window.scrollY - 4) + 'px'; box.style.transform = 'translateY(-100%)'; }
-    else box.style.top = (r.bottom + window.scrollY + 4) + 'px';
+    if (below < 280 && r.top > below) { box.style.top = (r.top - 4) + 'px'; box.style.transform = 'translateY(-100%)'; }
+    else box.style.top = (r.bottom + 4) + 'px';
 
     var all = [].map.call(select.options, function (o, i) {
       var g = o.parentNode && o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label : '';
@@ -592,13 +614,18 @@
     list.addEventListener('mousemove', function (e) { var d = e.target.closest('.opt'); if (d && +d.dataset.n !== hi) { hi = +d.dataset.n; paint(false); } });
     list.addEventListener('mousedown', function (e) { e.preventDefault(); });
     list.addEventListener('click', function (e) { var d = e.target.closest('.opt'); if (d) pick(+d.dataset.n); });
-    pop = { box: box, select: select };
+    pop = { box: box, select: select, at: Date.now() };
     input.value = query;
     render();
-    input.focus();
+    input.focus({ preventScroll: true });
   }
   function closePop() { if (pop) { pop.box.remove(); pop = null; } }
-  document.addEventListener('mousedown', function (e) { if (pop && !pop.box.contains(e.target) && e.target !== pop.select) closePop(); });
+  document.addEventListener('mousedown', function (e) {
+    if (!pop) return;
+    var path = e.composedPath();
+    if (path.indexOf(pop.box) === -1 && path.indexOf(pop.select) === -1) closePop();
+  });
+  window.addEventListener('scroll', function () { if (pop && Date.now() - pop.at > 250) closePop(); });
   window.addEventListener('resize', closePop);
 
   // ---------------------------------------------------------------- views
@@ -856,10 +883,206 @@
     select(current);
   }
 
+  // ---------------------------------------------------------------- builds sent from the game
+
+  // The Stats window's "Open in calculator" button links here with
+  // #build=<base64url JSON>:
+  //   { v: 1, job: rocalc's A_JOB value, baby, lv, jlv, st: [str, agi, vit, int, dex, luk],
+  //     gear: [{ s: slot, n: item name, r: refine, c: [card names], f: { el, stars } }],
+  //     sk: [[skill name, level], ...] }
+  // Names are matched against rocalc's own lists here, when the page loads,
+  // so the match always follows the rocalc release that is installed.
+  function readBuild() {
+    var m = location.hash.match(/^#build=([A-Za-z0-9_-]+)/);
+    if (!m) return null;
+    try {
+      var b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      var bytes = Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
+      var b = JSON.parse(new TextDecoder().decode(bytes));
+      return b && b.v === 1 ? b : null;
+    } catch (e) { return null; }
+  }
+
+  // "Abysmal Knight Helm (iRO) [1]" and "Abysmal Knight Helm" should meet.
+  function nameKey(t) { return String(t || '').toLowerCase().replace(/\[[^\]]*\]/g, '').replace(/[^a-z0-9]/g, ''); }
+  function bareKey(t) { return nameKey(String(t || '').replace(/\([^)]*\)/g, '').replace(/_+\s*$/, '')); }
+  // Skill names differ in small ways between translations: "Two-Handed Sword
+  // Mastery" / "Two-Hand Sword Mastery", "Increase" / "Increased", "Twohand".
+  // Each word loses a trailing -ed, -e or -s before the words are joined.
+  function skillKey(t) {
+    return String(t || '').toLowerCase().replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/).filter(Boolean).map(function (w) {
+      return w.length > 3 ? w.replace(/(ed|e|s)$/, '') : w;
+    }).join('');
+  }
+
+  // The best option in one of rocalc's lists for one of our names, or -1.
+  // An exact name wins; then the same name without rocalc's server and
+  // variant tags, preferring the plainest entry; then one half of a
+  // "Bacsojin / White Lady" style card entry.
+  function pick(sel, name) {
+    if (!sel || !name) return -1;
+    var k = nameKey(name), b = bareKey(name), best = -1, bestScore = 0;
+    for (var i = 0; i < sel.options.length; i++) {
+      var t = sel.options[i].text;
+      if (/^\(/.test(t)) continue; // "(no card)" and the like
+      var score = 0;
+      if (nameKey(t) === k) score = 100;
+      else if (bareKey(t) === b) score = 80;
+      else if (t.indexOf('/') !== -1 && t.split('/').some(function (p) { return bareKey(p) === b; })) score = 70;
+      if (!score) continue;
+      score -= (t.match(/\(/g) || []).length * 3 + (/_\s*$/.test(t) ? 4 : 0);
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    return best;
+  }
+  function choose(sel, i) {
+    if (!sel || i < 0) return false;
+    if (sel.selectedIndex !== i) { sel.selectedIndex = i; fire(sel, 'change'); }
+    return true;
+  }
+  function chooseValue(name, v) {
+    var sel = eng(name);
+    if (!sel || v == null) return false;
+    for (var i = 0; i < sel.options.length; i++) if (sel.options[i].value === String(v)) return choose(sel, i);
+    return false;
+  }
+  // The highest level the list offers that is not above lv.
+  function chooseLevel(sel, lv) {
+    if (!sel) return false;
+    var best = -1, bestV = -1;
+    for (var i = 0; i < sel.options.length; i++) {
+      var v = parseInt(String(sel.options[i].value).replace(/^\+/, ''), 10);
+      if (!isNaN(v) && v <= lv && v > bestV) { bestV = v; best = i; }
+    }
+    return choose(sel, best);
+  }
+  function tick(name, on) { var e = eng(name); if (e && e.checked !== !!on) e.click(); }
+
+  // slot: [item list, refine, card lists, attribute]
+  var GEAR = {
+    weapon: ['A_weapon1', 'A_Weapon_refine', ['A_weapon1_card1', 'A_weapon1_card2', 'A_weapon1_card3', 'A_weapon1_card4'], 'A_Weapon_element'],
+    head1: ['A_head1', 'A_HEAD_REFINE', ['A_head1_card']],
+    head2: ['A_head2', null, ['A_head2_card']],
+    head3: ['A_head3', null, []],
+    shield: ['A_left', 'A_LEFT_REFINE', ['A_left_card']],
+    body: ['A_body', 'A_BODY_REFINE', ['A_body_card']],
+    garment: ['A_shoulder', 'A_SHOULDER_REFINE', ['A_shoulder_card']],
+    shoes: ['A_shoes', 'A_SHOES_REFINE', ['A_shoes_card']],
+    acc1: ['A_acces1', null, ['A_acces1_card']],
+    acc2: ['A_acces2', null, ['A_acces2_card']],
+  };
+  // The weapon first: it decides whether a shield or a left hand fits.
+  var GEAR_ORDER = ['weapon', 'weapon2', 'shield', 'head1', 'head2', 'head3', 'body', 'garment', 'shoes', 'acc1', 'acc2', 'ammo'];
+
+  // Sets the whole build in rocalc. Returns the names rocalc had no entry
+  // for, or null when it doesn't have the class.
+  function applyOnce(b) {
+    var missed = [];
+    if (!chooseValue('A_JOB', b.job)) return null;
+    tick('A_adopted', !!b.baby);
+    tick('BLVauto', false); // keep the exact base level
+    chooseValue('A_BaseLV', b.lv);
+    chooseValue('A_JobLV', b.jlv);
+    ['A_STR', 'A_AGI', 'A_VIT', 'A_INT', 'A_DEX', 'A_LUK'].forEach(function (n, i) { chooseValue(n, (b.st || [])[i]); });
+
+    var bySlot = {};
+    (b.gear || []).forEach(function (g) { if (g && g.s) bySlot[g.s] = g; });
+    GEAR_ORDER.forEach(function (s) {
+      var g = bySlot[s];
+      if (!g || !g.n) return;
+      if (s === 'ammo') {
+        if (!choose(eng('A_Arrow'), pick(eng('A_Arrow'), g.n))) missed.push(g.n);
+        return;
+      }
+      var sel, refineSel, cards;
+      if (s === 'weapon2') {
+        sel = eng('A_weapon2');
+        if (!choose(sel, pick(sel, g.n))) { missed.push(g.n); return; }
+        // Its refine and cards only exist once a weapon is in the left hand.
+        var left = [].slice.call((byId('leftweapon') || ED).querySelectorAll('select')).filter(function (x) { return x.name !== 'A_weapon2'; });
+        refineSel = left.filter(function (x) { return x.options.length > 1 && /^\+\d+$/.test(x.options[1].text); })[0];
+        cards = left.filter(function (x) { return x !== refineSel; });
+      } else {
+        var slot = GEAR[s];
+        sel = eng(slot[0]);
+        if (!choose(sel, pick(sel, g.n))) { missed.push(g.n); return; }
+        refineSel = slot[1] ? eng(slot[1]) : null;
+        cards = slot[2].map(eng);
+        if (g.f && slot[3]) {
+          // A forged weapon: an element and Star Crumbs instead of cards.
+          var elSel = eng(slot[3]);
+          if (g.f.el) choose(elSel, pick(elSel, g.f.el));
+          for (var k = 0; k < (g.f.stars || 0) && k < cards.length; k++) choose(cards[k], pick(cards[k], 'Star Crumb'));
+        }
+      }
+      if (refineSel && g.r) chooseLevel(refineSel, g.r);
+      if (!g.f) (g.c || []).forEach(function (c, i) {
+        if (!c) return;
+        var cs = cards[i];
+        if (!cs || !choose(cs, pick(cs, String(c).replace(/\s*card$/i, '')))) missed.push(c);
+      });
+    });
+
+    // Learned skills onto rocalc's passive and self-cast list, by name. A
+    // label can carry a second name in its tooltip ("Alt. name:Over Thrust").
+    var rows = [].slice.call(form.querySelectorAll('select')).filter(function (x) { return /^A_skill\d+$/.test(x.name); }).map(function (x) {
+      var td = x.closest('td'), lab = td && td.previousElementSibling;
+      var keys = [];
+      if (lab) {
+        keys.push(skillKey(textWithoutTips(lab)));
+        var tip = lab.querySelector('.nametext');
+        if (tip) keys.push(skillKey(tip.textContent.replace(/^\s*alt\.?\s*name\s*:/i, '')));
+      }
+      return { sel: x, keys: keys.filter(Boolean) };
+    });
+    (b.sk || []).forEach(function (pair) {
+      var k = skillKey(pair && pair[0]);
+      if (!k) return;
+      var row = rows.filter(function (r) { return r.keys.indexOf(k) !== -1; })[0] || rows.filter(function (r) {
+        return r.keys.some(function (rk) { return k.length >= 6 && rk.length >= 6 && (rk.indexOf(k) === 0 || k.indexOf(rk) === 0); });
+      })[0];
+      if (row) chooseLevel(row.sel, Number(pair[1]) || 0);
+    });
+    return missed;
+  }
+
+  function applyBuild(b) {
+    var missed = applyOnce(b);
+    if (missed === null) { notice([h('p', { text: "rocalc doesn't have this class, so the build couldn't be loaded." })]); return; }
+    var unrestricted = false;
+    var jobBox = eng('restrict_jobequip');
+    if (missed.length && jobBox && jobBox.checked) {
+      // This server lets some classes wear gear rocalc keeps from them. Lift
+      // rocalc's job restriction (which clears the build) and set it again.
+      var before = missed.length;
+      jobBox.click();
+      var again = applyOnce(b) || missed;
+      if (again.length < before) { missed = again; unrestricted = true; }
+      else { jobBox.click(); missed = applyOnce(b) || missed; }
+    }
+    try { if (EW.calc) EW.calc(); } catch (e) {}
+    update();
+
+    var job = eng('A_JOB');
+    var lines = [h('p', { text: 'Loaded your ' + (job ? job.options[job.selectedIndex].text : 'character') + ' from the game: base level ' + b.lv + ', job level ' + b.jlv + ', stats, gear and skills.' })];
+    if (missed.length) lines.push(h('p', { text: "rocalc has no entry for these, so they're left out: " + missed.join(', ') + '.' }));
+    if (unrestricted) lines.push(h('p', { text: 'Equipment job restrictions are off so all of your gear fits. You can turn them back on under Server and options.' }));
+    lines.push(h('p', { className: 'quiet', text: "Self-cast skills are on at the level you learned. Turn off any you don't keep up." }));
+    notice(lines);
+  }
+
+  function notice(lines) {
+    var box = h('div', { className: 'notice', role: 'status' });
+    box.appendChild(h('div', { className: 'notice-body' }, lines));
+    box.appendChild(h('button', { type: 'button', className: 'btn', onclick: function () { box.remove(); } }, ['Dismiss']));
+    app.insertBefore(box, app.firstChild);
+  }
+
   // ---------------------------------------------------------------- boot
 
   function fail(msg) {
-    var l = document.getElementById('loading');
+    var l = shadow.getElementById('loading');
     if (l) { l.textContent = msg; l.classList.add('is-error'); }
   }
 
@@ -878,6 +1101,7 @@
           if (EW.navigator.clipboard) Object.defineProperty(EW.navigator.clipboard, 'writeText', { value: function () { return Promise.resolve(); } });
         } catch (e) {}
         buildApp();
+        if (incoming) applyBuild(incoming);
         new EW.MutationObserver(schedule).observe(ED.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style', 'disabled', 'class', 'checked', 'selected'] });
         // rocalc sometimes sets field values in code, which no observer sees.
         setInterval(function () { if (!document.hidden) update(); }, 1500);
@@ -888,8 +1112,12 @@
     })();
   }
 
+  // A build from the game is ours to apply; rocalc's own share links
+  // (#<its code>) go straight to rocalc, which reads them on load.
+  var incoming = readBuild();
   frame.addEventListener('load', boot, { once: true });
-  frame.src = 'engine.html' + location.hash;
+  frame.src = BASE + 'engine.html' + (incoming ? '' : location.hash);
+  document.body.appendChild(frame);
   // A shared character link opened while the page is up.
   window.addEventListener('hashchange', function () { location.reload(); });
 })();
