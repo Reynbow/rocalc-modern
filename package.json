@@ -1,0 +1,17 @@
+{
+  "name": "rocalc-modern",
+  "private": true,
+  "type": "module",
+  "description": "A restyled mirror of rocalc.com (Kurimet's Ragnarok Online Classic calculator) that follows its releases.",
+  "scripts": {
+    "import": "node tools/import-snapshot.mjs",
+    "build": "node tools/build.mjs",
+    "test": "node tools/smoke.mjs",
+    "sync": "node tools/import-snapshot.mjs && node tools/build.mjs && node tools/smoke.mjs",
+    "serve": "node tools/serve.mjs",
+    "bookmarklet": "node tools/make-bookmarklet.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.10.0"
+  }
+}

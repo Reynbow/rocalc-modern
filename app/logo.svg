@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    RO Classic + mark. Colours from the Traveller Passport: deep teal for the
+    tile, the passport's gold for the rings and the plus. Two rings around a
+    square-cut plus: a heavy outer ring, a thin inner ring, and clear space
+    between the inner ring and the plus. Vector, so it is crisp at any size.
+  -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b4a5a"/>
+      <stop offset="1" stop-color="#0c2a35"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f6577"/>
+      <stop offset="1" stop-color="#0a2029"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e2c274"/>
+      <stop offset="0.55" stop-color="#cfa74e"/>
+      <stop offset="1" stop-color="#b58c3a"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="96" fill="url(#tile)" stroke="url(#edge)" stroke-width="12"/>
+  <rect x="28" y="28" width="456" height="456" rx="82" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="4"/>
+  <!-- outer ring, heavy -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="url(#gold)" stroke-width="22"/>
+  <!-- inner ring, thin -->
+  <circle cx="256" cy="256" r="150" fill="none" stroke="url(#gold)" stroke-width="8"/>
+  <!-- plus, square ends, well inside the inner ring -->
+  <path d="M256 160v192M160 256h192" fill="none" stroke="url(#gold)" stroke-width="40" stroke-linecap="butt"/>
+</svg>

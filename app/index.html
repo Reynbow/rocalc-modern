@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pre-renewal calculator | RO Classic +</title>
+<meta name="description" content="Pre-renewal damage and stat calculator. Kurimet's rocalc in the RO Classic + layout.">
+<meta name="robots" content="noindex">
+<meta name="rocalc-release" content="{{RELEASE}}">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/Galmuri11.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css?v={{RELEASE}}">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="https://roclassicplus.com/"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text">RO Classic +</span></a>
+    <nav class="nav" aria-label="Site">
+      <a class="navlink navlink--active" href="./" aria-current="page">Calculator</a>
+      <a class="navlink" href="https://roclassicplus.com/?module=item">Database</a>
+      <a class="navlink" href="https://rocalc.com/" target="_blank" rel="noopener">Original rocalc</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <div class="pagehead">
+    <div>
+      <h1>Pre-renewal calculator</h1>
+      <p>Kurimet's rocalc in a new layout. Same maths, release {{RELEASE}}.</p>
+    </div>
+  </div>
+  <div id="app"><p class="loading" id="loading">Loading the calculator...</p></div>
+</main>
+
+<footer class="footer">
+  <p>The maths is <a href="https://rocalc.com/" target="_blank" rel="noopener">rocalc</a> by Kurimet, built on the work of ROratorio, Doddler, Gandi and Triper. This page changes only the layout; every number comes from rocalc's own code.</p>
+  <p>Saved characters live in this browser and are separate from the ones you saved on rocalc.com. Font: Galmuri11 (SIL Open Font License).</p>
+</footer>
+
+<!-- rocalc itself. It runs out of sight and does every calculation. -->
+<iframe id="engine" title="rocalc engine" tabindex="-1" aria-hidden="true"
+  style="position:absolute; left:-12000px; top:0; width:1400px; height:900px; border:0; visibility:hidden;"></iframe>
+
+<script src="app.js?v={{RELEASE}}"></script>
+</body>
+</html>

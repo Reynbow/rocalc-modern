@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# rocalc's files are kept exactly as rocalc.com serves them.
+upstream/** -text
+*.woff2 binary
